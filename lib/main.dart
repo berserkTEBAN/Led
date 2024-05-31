@@ -1,8 +1,42 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_circle_color_picker/flutter_circle_color_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
+const URL = 'http://192.168.1.93:5000';
 void main() {
   runApp(const MyApp());
+}
+
+void turnOnLed() async {
+  print('prender');
+  await http.post(Uri.parse(URL + '/turn-on'));
+}
+
+void turnOffLed() async {
+  print('apagar');
+  await http.post(Uri.parse(URL + '/turn-off'));
+}
+
+void setColorRgb(red, green, blue) async {
+  print('red: $red, green: $green, blue: $blue');
+  Map data = {
+    'red': red,
+    'green': green,
+    'blue': blue,
+  };
+
+  var body = json.encode(data);
+
+  await http.post(
+    Uri.parse(URL + '/set-color'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: body,
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -46,13 +80,11 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
   }
 
   void sendColorToArduino(Color color) {
-    // Convierte el color a valores RGB
-    // int red = color.red;
-    // int green = color.green;
-    // int blue = color.blue;
+    int red = color.red;
+    int green = color.green;
+    int blue = color.blue;
 
-    // Envía los valores RGB al Arduino mediante Bluetooth
-    // Implementa tu protocolo de comunicación específico
+    setColorRgb(red, green, blue);
   }
 
   void updateSelectedColor() {
@@ -68,7 +100,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
         title: const Text(
           'Ledcito',
           style: TextStyle(
-            color: const Color(0xFFEDE7FF),
+            color: Color(0xFFEDE7FF),
           ),
         ),
         actions: [
@@ -85,11 +117,11 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFFEDE7FF), // Color inicial
-              const Color(0xFF8667F2), // Color final
+              Color(0xFFEDE7FF), // Color inicial
+              Color(0xFF8667F2), // Color final
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -98,142 +130,144 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(
-                    vertical: 10.0,
-                    horizontal:
-                        30.0), // Modifica los valores de los márgenes vertical y horizontal según tus necesidades
-                padding: const EdgeInsets.all(
-                    20.0), // Modifica el valor del padding según tus necesidades
-                decoration: BoxDecoration(
-                  color: selectedColor, // Utiliza el color seleccionado
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: const Text(
-                  'Selecciona un color',
-                  style: TextStyle(
-                    color: Colors.black, // Color del texto
-                    fontSize: 16.0, // Tamaño de la fuente
-                    fontWeight: FontWeight.bold, // Peso de la fuente
-                    fontFamily: 'Arial', // Tipo de fuente
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                      vertical: 10.0,
+                      horizontal:
+                          30.0), // Modifica los valores de los márgenes vertical y horizontal según tus necesidades
+                  padding: const EdgeInsets.all(
+                      20.0), // Modifica el valor del padding según tus necesidades
+                  decoration: BoxDecoration(
+                    color: selectedColor, // Utiliza el color seleccionado
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: const Text(
+                    'Selecciona un color',
+                    style: TextStyle(
+                      color: Colors.black, // Color del texto
+                      fontSize: 16.0, // Tamaño de la fuente
+                      fontWeight: FontWeight.bold, // Peso de la fuente
+                      fontFamily: 'Arial', // Tipo de fuente
+                    ),
                   ),
                 ),
-              ),
-              CircleColorPicker(
-                controller: _controller,
-                onChanged: (color) {
-                  setState(() {
-                    selectedColor = color; // Actualiza el color seleccionado
-                    redValue = color.red.toDouble();
-                    greenValue = color.green.toDouble();
-                    blueValue = color.blue.toDouble();
-                    updateSelectedColor();
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 5.0, horizontal: 30.0),
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE7FF),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: ColorSlider(
-                      label: Text(
-                        'Red',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      value: redValue,
-                      onChanged: (value) {
-                        setState(() {
-                          redValue = value;
-                          updateSelectedColor();
-                        });
-                      },
-                      activeColor: const Color(0xFF8667F2),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 5.0, horizontal: 30.0),
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE7FF),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: ColorSlider(
-                      label: Text(
-                        'Green',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      value: greenValue,
-                      onChanged: (value) {
-                        setState(() {
-                          greenValue = value;
-                          updateSelectedColor();
-                        });
-                      },
-                      activeColor: const Color(0xFF8667F2),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 5.0, horizontal: 30.0),
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE7FF),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: ColorSlider(
-                      label: Text(
-                        'Blue',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      value: blueValue,
-                      onChanged: (value) {
-                        setState(() {
-                          blueValue = value;
-                          updateSelectedColor();
-                        });
-                      },
-                      activeColor: const Color(0xFF8667F2),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  connectToDevice();
-                  sendColorToArduino(selectedColor);
-                },
-                style: ElevatedButton.styleFrom(
-                  primary:
-                      selectedColor, // Cambia el color de fondo del botón al color seleccionado
+                CircleColorPicker(
+                  controller: _controller,
+                  onChanged: (color) {
+                    setState(() {
+                      selectedColor = color; // Actualiza el color seleccionado
+                      redValue = color.red.toDouble();
+                      greenValue = color.green.toDouble();
+                      blueValue = color.blue.toDouble();
+                      updateSelectedColor();
+                    });
+                  },
                 ),
-                child: const Text('Enviar'),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 5.0, horizontal: 30.0),
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE7FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: ColorSlider(
+                        label: const Text(
+                          'Red',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        value: redValue,
+                        onChanged: (value) {
+                          setState(() {
+                            redValue = value;
+                            updateSelectedColor();
+                          });
+                        },
+                        activeColor: const Color(0xFF8667F2),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 5.0, horizontal: 30.0),
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE7FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: ColorSlider(
+                        label: const Text(
+                          'Green',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        value: greenValue,
+                        onChanged: (value) {
+                          setState(() {
+                            greenValue = value;
+                            updateSelectedColor();
+                          });
+                        },
+                        activeColor: const Color(0xFF8667F2),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 5.0, horizontal: 30.0),
+                      padding: const EdgeInsets.all(10.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE7FF),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: ColorSlider(
+                        label: const Text(
+                          'Blue',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        value: blueValue,
+                        onChanged: (value) {
+                          setState(() {
+                            blueValue = value;
+                            updateSelectedColor();
+                          });
+                        },
+                        activeColor: const Color(0xFF8667F2),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    connectToDevice();
+                    sendColorToArduino(selectedColor);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        selectedColor, // Cambia el color de fondo del botón al color seleccionado
+                  ),
+                  child: const Text('Enviar'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
